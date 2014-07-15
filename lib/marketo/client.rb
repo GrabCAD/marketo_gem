@@ -253,9 +253,13 @@ module Grabcad
             :attributes! => { :lead_selector => { 'xsi:type' => 'tns:StaticListSelector' }}
           })
           ret = {}
-          ret[:leads] = response[:success_get_multiple_leads][:result][:lead_record_list][:lead_record].collect { |res|
-            LeadRecord.from_hash(self, res)
-          }
+          if response[:success_get_multiple_leads][:result][:lead_record_list][:lead_record].kind_of? Array
+            ret[:leads] = response[:success_get_multiple_leads][:result][:lead_record_list][:lead_record].collect { |res|
+              LeadRecord.from_hash(self, res)
+            }
+          else
+            ret[:leads] = [ LeadRecord.from_hash(self, response[:success_get_multiple_leads][:result][:lead_record_list][:lead_record]) ]
+          end
           ret[:return_count]        = response[:success_get_multiple_leads][:result][:return_count].to_i
           ret[:remaining_count]     = response[:success_get_multiple_leads][:result][:remaining_count].to_i
           ret[:new_stream_position] = response[:success_get_multiple_leads][:result][:new_stream_position]
