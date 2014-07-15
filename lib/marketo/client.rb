@@ -84,6 +84,10 @@ module Grabcad
         get_lead(LeadKey.new(LeadKeyType::EMAIL, email))
       end
 
+      def get_leads_from_list(list_name, stream_position=0, limit=1000)
+        get_leads(list_name, stream_position, limit)
+      end
+
       def logger=(logger) #Specify a logger compatible with ruby logger
         @logger = logger
         @client.globals.logger logger
@@ -229,6 +233,37 @@ module Grabcad
         begin
           response = send_request(:get_lead, {:lead_key => lead_key.to_hash})
           LeadRecord.from_hash(self, response[:success_get_lead][:result][:lead_record_list][:lead_record])
+        rescue Exception => e
+          log_exception e
+          nil
+        end
+      end
+
+      def get_leads(list_name, stream_position, batch_size)
+        begin
+          response = send_request(:get_multiple_leads, {
+            :lead_selector => {
+              :static_list_name => list_name
+            },
+            :include_attributes => {
+              :string_item => 'Email' # only retrieve email attribute to improve API response time
+            },
+            :batch_size      => batch_size,
+            :stream_position => stream_position,
+            :attributes! => { :lead_selector => { 'xsi:type' => 'tns:StaticListSelector' }}
+          })
+          ret = {}
+          if response[:success_get_multiple_leads][:result][:lead_record_list][:lead_record].kind_of? Array
+            ret[:leads] = response[:success_get_multiple_leads][:result][:lead_record_list][:lead_record].collect { |res|
+              LeadRecord.from_hash(self, res)
+            }
+          else
+            ret[:leads] = [ LeadRecord.from_hash(self, response[:success_get_multiple_leads][:result][:lead_record_list][:lead_record]) ]
+          end
+          ret[:return_count]        = response[:success_get_multiple_leads][:result][:return_count].to_i
+          ret[:remaining_count]     = response[:success_get_multiple_leads][:result][:remaining_count].to_i
+          ret[:new_stream_position] = response[:success_get_multiple_leads][:result][:new_stream_position]
+          ret
         rescue Exception => e
           log_exception e
           nil

@@ -13,6 +13,7 @@ module Grabcad
       LAST = 'Lead'
       COMPANY = 'Initech'
       MOBILE = '415 123 456'
+      LIST_NAME = 'static list'
 
       ACCESS_KEY = 'ACCESS_KEY'
       SECRET_KEY = 'SECRET_KEY'
@@ -50,6 +51,29 @@ module Grabcad
         lead = marketo.get_lead_by_lead_id(IDNUM)
         lead.should_not be_nil
         lead.id.should == IDNUM
+      end
+
+      it "should get leads from a list" do
+        fixture = File.read("spec/fixtures/get_leads_from_list_response.xml")
+        savon.expects(:get_multiple_leads).with(message: {
+          :lead_selector => {
+            :static_list_name => LIST_NAME
+          },
+          :include_attributes => {
+            :string_item => 'Email'
+          },
+          :batch_size => 1000,
+          :stream_position => 0,
+          :attributes! => { :lead_selector => { 'xsi:type' => 'tns:StaticListSelector' }}
+        }).returns(fixture)
+        marketo = Grabcad::Marketo.create_client(ACCESS_KEY, SECRET_KEY, ENDPOINT)
+        marketo.logger = (Logger.new(STDOUT))
+        marketo.log_level = Logger::DEBUG
+        leads = marketo.get_leads_from_list(LIST_NAME)
+        leads.should_not be_nil
+        leads[:return_count].should == 1
+        leads[:remaining_count].should == 0
+        leads[:leads].first.id.should == IDNUM
       end
 
       it "should create a new lead" do
