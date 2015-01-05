@@ -21,7 +21,7 @@ module Grabcad
       Client.new(savon_client, Grabcad::Marketo::AuthenticationHeader.new(access_key, secret_key))
     end
 
-    # Based on the WSDL for Marketo API V2.1, cached locally in ../wsdl/marketo_2_1.wsdl.  
+    # Based on the WSDL for Marketo API V2.1, cached locally in ../wsdl/marketo_2_1.wsdl.
     # To select another version of the API, specify the URI to the WSDL as the optional 4th argument to create_client.
     # You will need to verify that the gem still functions properly against the new version of the API.
     #
@@ -84,8 +84,8 @@ module Grabcad
         get_lead(LeadKey.new(LeadKeyType::EMAIL, email))
       end
 
-      def get_leads_from_list(list_name, stream_position=0, limit=1000)
-        get_leads(list_name, stream_position, limit)
+      def get_leads_from_list(list_name, stream_position=0, limit=1000, attributes_to_retrieve=['Email'])
+        get_leads(list_name, stream_position, limit, attributes_to_retrieve)
       end
 
       def logger=(logger) #Specify a logger compatible with ruby logger
@@ -106,12 +106,12 @@ module Grabcad
             :warn
           when Logger::ERROR
             :error
-          else 
+          else
             :fatal
           end
           @client.globals.log_level symbolic_level
           HTTPI.log_level = symbolic_level
-        else 
+        else
           false
         end
       end
@@ -146,7 +146,7 @@ module Grabcad
             :return_lead => true,
             :lead_record => {
               :email               => lead_record.email,
-              :lead_attribute_list => { :attribute => attributes } 
+              :lead_attribute_list => { :attribute => attributes }
             }
           })
           response[:success_sync_lead][:result][:lead_record]
@@ -197,7 +197,7 @@ module Grabcad
       end
 
       def log_exception(exp)
-        if @logger 
+        if @logger
           @logger.warn(exp)
           @logger.warn(exp.backtrace)
         end
@@ -239,14 +239,14 @@ module Grabcad
         end
       end
 
-      def get_leads(list_name, stream_position, batch_size)
+      def get_leads(list_name, stream_position, batch_size, attributes_to_retrieve)
         begin
           response = send_request(:get_multiple_leads, {
             :lead_selector => {
               :static_list_name => list_name
             },
             :include_attributes => {
-              :string_item => 'Email' # only retrieve email attribute to improve API response time
+              :string_item => attributes_to_retrieve
             },
             :batch_size      => batch_size,
             :stream_position => stream_position,

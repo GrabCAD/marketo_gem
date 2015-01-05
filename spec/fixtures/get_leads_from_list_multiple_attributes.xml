@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<SOAP-ENV:Envelope xmlns:SOAP-ENV="http://schemas.xmlsoap.org/soap/envelope/" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:ns1="http://www.marketo.com/mktows/">
+  <SOAP-ENV:Body>
+    <ns1:successGetMultipleLeads>
+      <result>
+        <returnCount>1</returnCount>
+        <remainingCount>0</remainingCount>
+        <leadRecordList>
+          <leadRecord>
+            <Id>12345</Id>
+            <Email>some@email.com</Email>
+            <Company>Initech</Company>
+            <ForeignSysPersonId xsi:nil="true"/>
+            <ForeignSysType xsi:nil="true"/>
+            <leadAttributeList xsi:nil="true"/>
+          </leadRecord>
+        </leadRecordList>
+      </result>
+    </ns1:successGetMultipleLeads>
+  </SOAP-ENV:Body>
+</SOAP-ENV:Envelope>

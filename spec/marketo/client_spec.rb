@@ -23,7 +23,7 @@ module Grabcad
 
       before(:all) { savon.mock! }
       after(:all)  { savon.unmock! }
-      
+
       it "should return a marketo client" do
         client = Grabcad::Marketo.create_client(ACCESS_KEY, SECRET_KEY, ENDPOINT)
         client.should_not be_nil;
@@ -53,14 +53,14 @@ module Grabcad
         lead.id.should == IDNUM
       end
 
-      it "should get leads from a list" do
+      it "should get leads from a list without specifying attributes to retrieve" do
         fixture = File.read("spec/fixtures/get_leads_from_list_response.xml")
         savon.expects(:get_multiple_leads).with(message: {
           :lead_selector => {
             :static_list_name => LIST_NAME
           },
           :include_attributes => {
-            :string_item => 'Email'
+            :string_item => ['Email']
           },
           :batch_size => 1000,
           :stream_position => 0,
@@ -75,6 +75,29 @@ module Grabcad
         leads[:remaining_count].should == 0
         leads[:leads].first.id.should == IDNUM
       end
+
+      it "should get leads from a list with specified attributes" do
+        fixture = File.read("spec/fixtures/get_leads_from_list_multiple_attributes.xml")
+        savon.expects(:get_multiple_leads).with(message: {
+          :lead_selector => {
+            :static_list_name => LIST_NAME
+          },
+          :include_attributes => {
+            :string_item => ['Email', 'Company']
+          },
+          :batch_size => 1000,
+          :stream_position => 0,
+          :attributes! => { :lead_selector => { 'xsi:type' => 'tns:StaticListSelector' }}
+          }).returns(fixture)
+          marketo = Grabcad::Marketo.create_client(ACCESS_KEY, SECRET_KEY, ENDPOINT)
+          marketo.logger = (Logger.new(STDOUT))
+          marketo.log_level = Logger::DEBUG
+          leads = marketo.get_leads_from_list(LIST_NAME, 0, 1000, %w(Email Company))
+          leads.should_not be_nil
+          leads[:return_count].should == 1
+          leads[:remaining_count].should == 0
+          leads[:leads].first.id.should == IDNUM
+        end
 
       it "should create a new lead" do
         fixture = File.read("spec/fixtures/insert_lead_response.xml")
@@ -115,9 +138,9 @@ module Grabcad
 
         it "should check if a lead is a member of a list and return false" do
           fixture = File.read("spec/fixtures/is_lead_in_list_false.xml")
-          savon.expects(:list_operation).with(message: 
+          savon.expects(:list_operation).with(message:
             {:list_operation=>"ISMEMBEROFLIST",
-              :list_key=>{:key_type=>"MKTOLISTNAME", 
+              :list_key=>{:key_type=>"MKTOLISTNAME",
                           :key_value=>TEST_LIST},
               :strict=>"false",
               :list_member_list=>{:lead_key=>[{:key_type=>"IDNUM", :key_value=>IDNUM}]}}).returns(fixture)
@@ -127,9 +150,9 @@ module Grabcad
 
         it "should check if a lead is a member of a list and return true" do
           fixture = File.read("spec/fixtures/is_lead_in_list_true.xml")
-          savon.expects(:list_operation).with(message: 
+          savon.expects(:list_operation).with(message:
             {:list_operation=>"ISMEMBEROFLIST",
-              :list_key=>{:key_type=>"MKTOLISTNAME", 
+              :list_key=>{:key_type=>"MKTOLISTNAME",
                           :key_value=>TEST_LIST},
               :strict=>"false",
               :list_member_list=>{:lead_key=>[{:key_type=>"IDNUM", :key_value=>IDNUM}]}}).returns(fixture)
@@ -139,9 +162,9 @@ module Grabcad
 
         it "should add a lead to a list" do
           fixture = File.read("spec/fixtures/add_lead_to_list.xml")
-          savon.expects(:list_operation).with(message: 
+          savon.expects(:list_operation).with(message:
             {:list_operation=>"ADDTOLIST",
-              :list_key=>{:key_type=>"MKTOLISTNAME", 
+              :list_key=>{:key_type=>"MKTOLISTNAME",
                           :key_value=>TEST_LIST},
               :strict=>"false",
               :list_member_list=>{:lead_key=>[{:key_type=>"IDNUM", :key_value=>IDNUM}]}}).returns(fixture)
@@ -152,9 +175,9 @@ module Grabcad
 
         it "should remove a lead from a list" do
           fixture = File.read("spec/fixtures/remove_lead_from_list.xml")
-          savon.expects(:list_operation).with(message: 
+          savon.expects(:list_operation).with(message:
             {:list_operation=>"REMOVEFROMLIST",
-              :list_key=>{:key_type=>"MKTOLISTNAME", 
+              :list_key=>{:key_type=>"MKTOLISTNAME",
                           :key_value=>TEST_LIST},
               :strict=>"false",
               :list_member_list=>{:lead_key=>[{:key_type=>"IDNUM", :key_value=>IDNUM}]}}).returns(fixture)
